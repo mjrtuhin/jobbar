@@ -118,7 +118,7 @@ def load_config(config_path: str = "config/config.json") -> dict:
     with open(config_path, "r") as f:
         config = json.load(f)
 
-    env_api_key = os.getenv("MOONSHOT_API_KEY")
+    env_api_key = os.getenv("GROQ_API_KEY")
     if env_api_key:
         config["ai_provider"]["api_key"] = env_api_key
 

@@ -46,6 +46,7 @@ def run_jobspy_single_site(site: str, job_title: str, location: str, results_wan
         "results_wanted": results_wanted,
         "hours_old": hours_old,
         "country_indeed": country,
+        "linkedin_fetch_description": True,
         "verbose": 1
     }
 

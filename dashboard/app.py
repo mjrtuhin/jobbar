@@ -109,13 +109,16 @@ CUSTOM_CSS = """
 </style>
 """
 
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
+PROFILE_PATH = os.path.join(PROJECT_ROOT, "config", "profile.json")
+
 
 def inject_css():
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 
 def get_config():
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config", "config.json")
+    config_path = os.path.join(PROJECT_ROOT, "config", "config.json")
     return load_config(config_path)
 
 
@@ -133,13 +136,26 @@ def get_sheets_manager(config):
 def get_ai_helper(config):
     ai_config = config["ai_provider"]
     if not ai_config.get("api_key"):
-        st.error("AI API key not configured. Set MOONSHOT_API_KEY in your .env file.")
+        st.error("AI API key not configured. Set GROQ_API_KEY in your .env file.")
         return None
     return AIHelper(
         api_key=ai_config["api_key"],
         base_url=ai_config["base_url"],
         model=ai_config["model"]
     )
+
+
+def load_profile() -> dict:
+    if os.path.exists(PROFILE_PATH):
+        with open(PROFILE_PATH, "r") as f:
+            return json.load(f)
+    return {}
+
+
+def save_profile(profile: dict):
+    os.makedirs(os.path.dirname(PROFILE_PATH), exist_ok=True)
+    with open(PROFILE_PATH, "w") as f:
+        json.dump(profile, f, indent=4)
 
 
 def run_agent_safely(agent_func, *args, **kwargs):
@@ -151,8 +167,8 @@ def run_agent_safely(agent_func, *args, **kwargs):
         error_type = type(e).__name__
         if "401" in error_str or "authentication" in error_str.lower():
             st.error(
-                "API Authentication Failed (401). Your Moonshot API key is invalid or expired. "
-                "Go to platform.moonshot.ai to get a new key, then update your .env file."
+                "API Authentication Failed (401). Your Groq API key is invalid or expired. "
+                "Go to console.groq.com/keys to get a new key, then update your .env file."
             )
         elif "429" in error_str or "rate" in error_str.lower():
             st.error("Rate limit reached. Wait a minute and try again.")
@@ -203,6 +219,14 @@ def build_eml_file(to_email: str, subject: str, body: str, cv_path: str, cl_path
     return msg.as_bytes()
 
 
+def read_file_content(path, mode="r"):
+    """Safely read a file, return empty string if not found."""
+    if path and os.path.exists(path):
+        with open(path, mode) as f:
+            return f.read()
+    return "" if mode == "r" else b""
+
+
 def page_home():
     """Landing page."""
     st.markdown('<div class="hero-title">Welcome to Jobbar</div>', unsafe_allow_html=True)
@@ -249,7 +273,7 @@ def page_home():
     st.markdown("")
     st.markdown('<div class="section-header">Configuration</div>', unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Storage & AI", "Search Defaults", "CV Content"])
+    tab1, tab2 = st.tabs(["Storage & AI", "Search Defaults"])
 
     with tab1:
         file_path = config.get("storage", {}).get("file_path", "data/jobs.xlsx")
@@ -259,7 +283,7 @@ def page_home():
             st.text_input("API Key", value=config["ai_provider"]["api_key"], type="password")
         with col2:
             st.text_input("Model", value=config["ai_provider"]["model"])
-        st.caption("Using Moonshot Kimi API (free tier). Get your key at platform.moonshot.ai")
+        st.caption("Using Groq API (free tier). Get your key at console.groq.com/keys")
 
     with tab2:
         col1, col2, col3 = st.columns(3)
@@ -270,17 +294,102 @@ def page_home():
         with col3:
             st.selectbox("Date Posted", ["past_24h", "past_3days", "past_week", "past_14days"], index=2, key="cfg_dp")
 
-    with tab3:
-        cv_path = os.path.join(os.path.dirname(__file__), "..", "config", "cv_content.txt")
-        cv_content = ""
-        if os.path.exists(cv_path):
-            with open(cv_path, "r") as f:
-                cv_content = f.read()
-        cv_text = st.text_area("Your CV Content", value=cv_content, height=400, label_visibility="collapsed")
-        if st.button("Save CV Content", type="primary"):
-            with open(cv_path, "w") as f:
-                f.write(cv_text)
-            st.success("CV content saved successfully.")
+    render_footer()
+
+
+def page_profile():
+    """Page: User Profile - personal details for CV generation."""
+    st.markdown('<div class="hero-title">My Profile</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Enter your details. The AI will use this to generate tailored CVs for any user.</div>', unsafe_allow_html=True)
+
+    profile = load_profile()
+
+    st.markdown('<div class="section-header">Personal Information</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        full_name = st.text_input("Full Name", value=profile.get("full_name", ""))
+        email = st.text_input("Email", value=profile.get("email", ""))
+    with col2:
+        phone = st.text_input("Phone", value=profile.get("phone", ""))
+        location = st.text_input("Address / Location", value=profile.get("location", ""))
+
+    st.markdown('<div class="section-header">CV Content (Experience, Education, Skills, etc.)</div>', unsafe_allow_html=True)
+    st.caption("Paste your full CV content below. The AI reads this to tailor CVs for each job.")
+    cv_path = os.path.join(PROJECT_ROOT, "config", "cv_content.txt")
+    cv_content = ""
+    if os.path.exists(cv_path):
+        with open(cv_path, "r") as f:
+            cv_content = f.read()
+    cv_text = st.text_area("CV Content", value=cv_content, height=300, label_visibility="collapsed")
+
+    st.markdown('<div class="section-header">Languages</div>', unsafe_allow_html=True)
+    languages = profile.get("languages", [])
+    lang_text = st.text_area(
+        "Languages (one per line, format: Language: Level)",
+        value="\n".join([f"{l['language']}: {l['level']}" for l in languages]) if languages else "",
+        height=100,
+        label_visibility="collapsed",
+        placeholder="English: Advanced (C1)\nBangla: Native"
+    )
+
+    st.markdown('<div class="section-header">Community Service</div>', unsafe_allow_html=True)
+    community = profile.get("community_service", [])
+    community_text = st.text_area(
+        "Community Service (one per line)",
+        value="\n".join(community) if community else "",
+        height=80,
+        label_visibility="collapsed",
+        placeholder="Volunteer, Red Cross, 2020-2022"
+    )
+
+    st.markdown('<div class="section-header">References</div>', unsafe_allow_html=True)
+    st.caption("Add up to 2 references. Fill in all fields for each.")
+    refs = profile.get("references", [{}, {}])
+    while len(refs) < 2:
+        refs.append({})
+
+    ref_data = []
+    for i in range(2):
+        st.markdown(f"**Reference {i + 1}**")
+        rc1, rc2 = st.columns(2)
+        with rc1:
+            rname = st.text_input(f"Name", value=refs[i].get("name", ""), key=f"ref_name_{i}")
+            rphone = st.text_input(f"Phone", value=refs[i].get("phone", ""), key=f"ref_phone_{i}")
+            rrel = st.text_input(f"Relationship", value=refs[i].get("relationship", ""), key=f"ref_rel_{i}")
+        with rc2:
+            rtitle = st.text_input(f"Title / Position", value=refs[i].get("title", ""), key=f"ref_title_{i}")
+            remail = st.text_input(f"Email", value=refs[i].get("email", ""), key=f"ref_email_{i}")
+        if rname:
+            ref_data.append({
+                "name": rname, "title": rtitle, "phone": rphone,
+                "email": remail, "relationship": rrel
+            })
+
+    st.markdown("")
+    if st.button("Save Profile", type="primary", use_container_width=True):
+        parsed_langs = []
+        for line in lang_text.strip().split("\n"):
+            if ":" in line:
+                parts = line.split(":", 1)
+                parsed_langs.append({"language": parts[0].strip(), "level": parts[1].strip()})
+
+        parsed_community = [l.strip() for l in community_text.strip().split("\n") if l.strip()]
+
+        new_profile = {
+            "full_name": full_name,
+            "email": email,
+            "phone": phone,
+            "location": location,
+            "languages": parsed_langs,
+            "community_service": parsed_community,
+            "references": ref_data
+        }
+        save_profile(new_profile)
+
+        with open(cv_path, "w") as f:
+            f.write(cv_text)
+
+        st.success("Profile and CV content saved successfully!")
 
     render_footer()
 
@@ -348,9 +457,9 @@ def page_job_search():
                 with cols[i]:
                     st.metric(src, count)
 
-            df = pd.DataFrame(jobs)
-            display_cols = [c for c in ["Job Title", "Company", "Location", "Source", "Salary"] if c in df.columns]
-            st.dataframe(df[display_cols], use_container_width=True, hide_index=True, height=400)
+            results_df = pd.DataFrame(jobs)
+            display_cols = [c for c in ["Job Title", "Company", "Location", "Source", "Salary"] if c in results_df.columns]
+            st.dataframe(results_df[display_cols], use_container_width=True, hide_index=True, height=400)
         else:
             st.warning("No jobs found. Try different keywords, a broader location, or a wider date range.")
 
@@ -443,7 +552,6 @@ def page_jobs():
         st.session_state.selected_jobs = set()
 
     def toggle_selection(job_idx):
-        """Callback to toggle job selection before next render."""
         key = f"sel_{job_idx}"
         if st.session_state.get(key, False):
             st.session_state.selected_jobs.add(job_idx)
@@ -511,7 +619,7 @@ def page_jobs():
     for idx, row in filtered.iterrows():
         title = clean_nan(row.get("Job Title", "Unknown"))
         company = clean_nan(row.get("Company", ""))
-        location = clean_nan(row.get("Location", ""))
+        loc = clean_nan(row.get("Location", ""))
         source = clean_nan(row.get("Source", ""))
         status = clean_nan(row.get("Status", "New")) or "New"
         salary = clean_nan(row.get("Salary", ""))
@@ -557,8 +665,8 @@ def page_jobs():
             with icol1:
                 if company:
                     st.markdown(f"**Company:** {company}")
-                if location:
-                    st.markdown(f"**Location:** {location}")
+                if loc:
+                    st.markdown(f"**Location:** {loc}")
             with icol2:
                 if salary:
                     st.markdown(f"**Salary:** {salary}")
@@ -606,12 +714,13 @@ def page_jobs():
 
 
 def page_click_to_apply():
-    """Page: Review CV alongside job description and send application email."""
+    """Page: Review CV, cover letter, fit evaluation, AI email, and apply."""
     st.markdown('<div class="hero-title">Click to Apply</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-subtitle">Review your tailored CV and cover letter, then apply with one click.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Review your tailored CV, cover letter, and compatibility. Then apply with one click.</div>', unsafe_allow_html=True)
 
     config = get_config()
     sheets_manager = get_sheets_manager(config)
+    profile = load_profile()
     if not sheets_manager:
         return
 
@@ -631,16 +740,19 @@ def page_click_to_apply():
         render_footer()
         return
 
+    sender_name = profile.get("full_name", "Your Name")
+
     for idx, row in ready_jobs.iterrows():
         title = clean_nan(row.get("Job Title", "Unknown"))
         company = clean_nan(row.get("Company", ""))
-        location = clean_nan(row.get("Location", ""))
+        loc = clean_nan(row.get("Location", ""))
         salary = clean_nan(row.get("Salary", ""))
         job_url = clean_nan(row.get("Job URL", ""))
         description = clean_nan(row.get("Description", ""))
         cv_path = clean_nan(row.get("CV Path", ""))
         cl_path = clean_nan(row.get("Cover Letter Path", ""))
         fit_score = clean_nan(row.get("Fit Score", ""))
+        fit_summary = clean_nan(row.get("Fit Summary", ""))
 
         score_display = ""
         try:
@@ -655,90 +767,177 @@ def page_click_to_apply():
             if job_url:
                 st.markdown(f"[Open Original Listing]({job_url})")
 
-            left_col, right_col = st.columns(2)
+            tab_cv, tab_cl, tab_fit, tab_email = st.tabs(["CV Preview", "Cover Letter", "Fit Evaluation", "Apply by Email"])
 
-            with left_col:
-                st.markdown("**Job Description**")
-                if location:
-                    st.caption(f"Location: {location}")
-                if salary:
-                    st.caption(f"Salary: {salary}")
-                st.markdown("---")
-                if description:
-                    st.text_area("", value=description[:3000], height=400, disabled=True, key=f"desc_{idx}", label_visibility="collapsed")
-                else:
-                    st.caption("No description available")
+            with tab_cv:
+                left_col, right_col = st.columns(2)
 
-            with right_col:
-                st.markdown("**Your Tailored CV**")
-                if cv_path and os.path.exists(cv_path):
-                    tex_path = cv_path.replace(".pdf", ".tex")
-                    if os.path.exists(tex_path):
-                        with open(tex_path, "r") as f:
-                            tex_content = f.read()
-                        st.text_area("", value=tex_content[:3000], height=400, disabled=True, key=f"cv_preview_{idx}", label_visibility="collapsed")
+                with left_col:
+                    st.markdown("**Job Description**")
+                    if loc:
+                        st.caption(f"Location: {loc}")
+                    if salary:
+                        st.caption(f"Salary: {salary}")
+                    st.markdown("---")
+                    if description:
+                        st.text_area("", value=description[:3000], height=400, disabled=True, key=f"desc_{idx}", label_visibility="collapsed")
                     else:
-                        st.success("CV PDF generated")
+                        st.caption("No description available")
 
-                    with open(cv_path, "rb") as f:
-                        st.download_button("Download CV (PDF)", f.read(), file_name=f"CV_{company}_{title[:20]}.pdf", mime="application/pdf", key=f"dl_cv_{idx}")
-                else:
-                    st.warning("CV not found")
+                with right_col:
+                    st.markdown("**Your Tailored CV**")
+                    if cv_path and os.path.exists(cv_path):
+                        if cv_path.endswith(".tex"):
+                            tex_path = cv_path
+                            pdf_path = cv_path.replace(".tex", ".pdf")
+                        else:
+                            pdf_path = cv_path
+                            tex_path = cv_path.replace(".pdf", ".tex")
 
+                        if os.path.exists(tex_path):
+                            tex_content = read_file_content(tex_path)
+                            st.text_area("", value=tex_content[:3000], height=400, disabled=True, key=f"cv_preview_{idx}", label_visibility="collapsed")
+
+                        if os.path.exists(pdf_path):
+                            with open(pdf_path, "rb") as f:
+                                st.download_button("Download CV (PDF)", f.read(), file_name=f"CV_{company}_{title[:20]}.pdf", mime="application/pdf", key=f"dl_cv_{idx}")
+                        elif os.path.exists(tex_path):
+                            with open(tex_path, "r") as f:
+                                st.download_button("Download CV (LaTeX)", f.read(), file_name=f"CV_{company}_{title[:20]}.tex", mime="text/plain", key=f"dl_cv_{idx}")
+                            st.caption("PDF not generated. Install LaTeX: brew install basictex")
+                    else:
+                        st.warning("CV not found")
+
+            with tab_cl:
+                st.markdown("**Cover Letter**")
                 if cl_path and os.path.exists(cl_path):
-                    with open(cl_path, "rb") as f:
-                        st.download_button("Download Cover Letter (PDF)", f.read(), file_name=f"CL_{company}_{title[:20]}.pdf", mime="application/pdf", key=f"dl_cl_{idx}")
+                    if cl_path.endswith(".tex"):
+                        cl_tex = cl_path
+                        cl_pdf = cl_path.replace(".tex", ".pdf")
+                    else:
+                        cl_pdf = cl_path
+                        cl_tex = cl_path.replace(".pdf", ".tex")
 
-            st.markdown("---")
-            st.markdown("**Send Application**")
+                    if os.path.exists(cl_tex):
+                        cl_content = read_file_content(cl_tex)
+                        st.text_area("", value=cl_content[:3000], height=400, disabled=True, key=f"cl_preview_{idx}", label_visibility="collapsed")
 
-            email_col1, email_col2 = st.columns([2, 1])
-            with email_col1:
-                recipient = st.text_input("Employer Email", placeholder="hr@company.com", key=f"email_{idx}")
-            with email_col2:
-                sender_name = st.text_input("Your Name", value="Md Julfikar Rahman Tuhin", key=f"name_{idx}")
-
-            subject = f"Application for {title} - {company}" if company else f"Application for {title}"
-            body = (
-                f"Dear Hiring Manager,\n\n"
-                f"I am writing to express my interest in the {title} position"
-                f"{' at ' + company if company else ''}. "
-                f"Please find my CV and cover letter attached for your review.\n\n"
-                f"I look forward to hearing from you.\n\n"
-                f"Best regards,\n{sender_name}"
-            )
-
-            st.text_area("Email Preview", value=body, height=150, key=f"body_{idx}", disabled=True)
-
-            btn_col1, btn_col2, btn_col3 = st.columns(3)
-
-            with btn_col1:
-                if recipient:
-                    mailto_subject = quote(subject)
-                    mailto_body = quote(body)
-                    mailto_link = f"mailto:{recipient}?subject={mailto_subject}&body={mailto_body}"
-                    st.markdown(f'<a href="{mailto_link}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:0.6rem 1.5rem;border-radius:8px;text-decoration:none;font-weight:600;text-align:center;">Open in Email App</a>', unsafe_allow_html=True)
-                    st.caption("This opens your email client. Attach the CV and cover letter PDFs manually.")
+                    dcol1, dcol2 = st.columns(2)
+                    with dcol1:
+                        if os.path.exists(cl_pdf):
+                            with open(cl_pdf, "rb") as f:
+                                st.download_button("Download Cover Letter (PDF)", f.read(), file_name=f"CL_{company}_{title[:20]}.pdf", mime="application/pdf", key=f"dl_cl_{idx}")
+                    with dcol2:
+                        if os.path.exists(cl_tex):
+                            with open(cl_tex, "r") as f:
+                                st.download_button("Download Cover Letter (LaTeX)", f.read(), file_name=f"CL_{company}_{title[:20]}.tex", mime="text/plain", key=f"dl_cl_tex_{idx}")
                 else:
-                    st.caption("Enter an email address above")
+                    st.warning("Cover letter not found")
 
-            with btn_col2:
-                if recipient and cv_path and os.path.exists(cv_path):
-                    eml_data = build_eml_file(recipient, subject, body, cv_path, cl_path)
-                    st.download_button(
-                        "Download .eml (with attachments)",
-                        eml_data,
-                        file_name=f"Application_{company}_{title[:15]}.eml",
-                        mime="message/rfc822",
-                        key=f"eml_{idx}"
-                    )
-                    st.caption("Download and open in your email client. Attachments included.")
+            with tab_fit:
+                st.markdown("**Compatibility Evaluation**")
+                if fit_summary:
+                    try:
+                        eval_data = json.loads(fit_summary)
+                        fcol1, fcol2, fcol3 = st.columns(3)
+                        with fcol1:
+                            score_val = eval_data.get("fit_score", 0)
+                            st.metric("Fit Score", f"{score_val}/100")
+                        with fcol2:
+                            st.metric("Likelihood", eval_data.get("likelihood", "N/A"))
+                        with fcol3:
+                            st.metric("Overall", "Strong" if score_val >= 70 else "Moderate" if score_val >= 40 else "Low")
 
-            with btn_col3:
-                if st.button("Mark as Applied", key=f"apply_done_{idx}"):
-                    sheets_manager.update_job_row(idx, {"Status": "Applied"})
-                    st.success("Marked as Applied!")
-                    st.rerun()
+                        matched = eval_data.get("matched_skills", [])
+                        missing = eval_data.get("missing_skills", [])
+                        strengths = eval_data.get("strengths", [])
+                        weaknesses = eval_data.get("weaknesses", [])
+
+                        if matched:
+                            st.markdown("**Matched Skills:** " + ", ".join(matched))
+                        if missing:
+                            st.markdown("**Missing Skills:** " + ", ".join(missing))
+                        if eval_data.get("experience_gap"):
+                            st.markdown(f"**Experience Gap:** {eval_data['experience_gap']}")
+                        if strengths:
+                            st.markdown("**Strengths:** " + ", ".join(strengths))
+                        if weaknesses:
+                            st.markdown("**Weaknesses:** " + ", ".join(weaknesses))
+                        if eval_data.get("recommendation"):
+                            st.info(f"**Recommendation:** {eval_data['recommendation']}")
+                    except (json.JSONDecodeError, TypeError):
+                        st.text(fit_summary)
+                else:
+                    st.caption("No fit evaluation yet. Go to My Jobs and click 'Evaluate Fit' for this job first.")
+                    if st.button("Run Fit Evaluation Now", key=f"run_fit_{idx}"):
+                        ai = get_ai_helper(config)
+                        if ai:
+                            with st.spinner("Evaluating compatibility..."):
+                                evaluator = FitEvaluator(ai, config)
+                                count = run_agent_safely(evaluator.process_selected_jobs, sheets_manager, [idx])
+                            if count and count > 0:
+                                st.success("Evaluation complete!")
+                            st.rerun()
+
+            with tab_email:
+                st.markdown("**Send Application Email**")
+
+                email_col1, email_col2 = st.columns([2, 1])
+                with email_col1:
+                    recipient = st.text_input("Employer Email", placeholder="hr@company.com", key=f"email_{idx}")
+                with email_col2:
+                    sender = st.text_input("Your Name", value=sender_name, key=f"name_{idx}")
+
+                subject = f"Application for {title} - {company}" if company else f"Application for {title}"
+
+                if st.button("Generate AI Email", key=f"gen_email_{idx}"):
+                    ai = get_ai_helper(config)
+                    if ai:
+                        with st.spinner("Writing email..."):
+                            email_body = run_agent_safely(ai.write_application_email, title, company, sender)
+                        if email_body:
+                            st.session_state[f"email_body_{idx}"] = email_body
+
+                default_body = (
+                    f"Dear Hiring Manager,\n\n"
+                    f"I am writing to express my interest in the {title} position"
+                    f"{' at ' + company if company else ''}. "
+                    f"Please find my CV and cover letter attached for your review.\n\n"
+                    f"I look forward to hearing from you.\n\n"
+                    f"Best regards,\n{sender}"
+                )
+                body = st.session_state.get(f"email_body_{idx}", default_body)
+                body = st.text_area("Email Body", value=body, height=150, key=f"body_{idx}")
+
+                btn_col1, btn_col2, btn_col3 = st.columns(3)
+
+                with btn_col1:
+                    if recipient:
+                        mailto_subject = quote(subject)
+                        mailto_body = quote(body)
+                        mailto_link = f"mailto:{recipient}?subject={mailto_subject}&body={mailto_body}"
+                        st.markdown(f'<a href="{mailto_link}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:0.6rem 1.5rem;border-radius:8px;text-decoration:none;font-weight:600;text-align:center;">Open in Email App</a>', unsafe_allow_html=True)
+                        st.caption("Opens your email client. Attach PDFs manually.")
+                    else:
+                        st.caption("Enter an email address above")
+
+                with btn_col2:
+                    if recipient and cv_path and os.path.exists(cv_path):
+                        eml_data = build_eml_file(recipient, subject, body, cv_path, cl_path)
+                        st.download_button(
+                            "Download .eml (with attachments)",
+                            eml_data,
+                            file_name=f"Application_{company}_{title[:15]}.eml",
+                            mime="message/rfc822",
+                            key=f"eml_{idx}"
+                        )
+                        st.caption("Download and open in email client. Attachments included.")
+
+                with btn_col3:
+                    if st.button("Mark as Applied", key=f"apply_done_{idx}"):
+                        sheets_manager.update_job_row(idx, {"Status": "Applied"})
+                        st.success("Marked as Applied!")
+                        st.rerun()
 
     render_footer()
 
@@ -899,7 +1098,7 @@ def main():
 
         page = st.radio(
             "Navigation",
-            ["Home", "Job Search", "My Jobs", "Click to Apply", "Analytics"],
+            ["Home", "My Profile", "Job Search", "My Jobs", "Click to Apply", "Analytics"],
             label_visibility="collapsed"
         )
 
@@ -913,6 +1112,8 @@ def main():
 
     if page == "Home":
         page_home()
+    elif page == "My Profile":
+        page_profile()
     elif page == "Job Search":
         page_job_search()
     elif page == "My Jobs":

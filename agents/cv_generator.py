@@ -21,6 +21,13 @@ class CVGenerator:
         with open(cv_path, "r") as f:
             return f.read()
 
+    def load_profile(self) -> dict:
+        profile_path = os.path.join(self.project_root, "config", "profile.json")
+        if os.path.exists(profile_path):
+            with open(profile_path, "r") as f:
+                return json.load(f)
+        return {}
+
     def load_template(self, template_path: str) -> str:
         with open(template_path, "r") as f:
             return f.read()
@@ -48,7 +55,6 @@ class CVGenerator:
         return text
 
     def build_professional_summary(self, summary_text: str) -> str:
-        """Build the Professional Summary LaTeX block."""
         escaped = self.escape_latex(summary_text.strip())
         return (
             "\\noindent\n"
@@ -57,9 +63,6 @@ class CVGenerator:
         )
 
     def build_work_history(self, work_items: list) -> str:
-        """Build the Work History LaTeX block.
-        Each item: {title, company, dates, location, bullets: [str]}
-        """
         lines = [
             "\\noindent\n",
             "\\textbf{\\textcolor{sectioncolor}{Work History}}\n",
@@ -81,7 +84,6 @@ class CVGenerator:
         return "".join(lines)
 
     def build_education(self, edu_items: list) -> str:
-        """Build the Education LaTeX block."""
         lines = [
             "\\noindent\n",
             "\\textbf{\\textcolor{sectioncolor}{Education}}\n",
@@ -102,7 +104,6 @@ class CVGenerator:
         return "".join(lines)
 
     def build_skills(self, skills: list) -> str:
-        """Build the Skills LaTeX block (3 columns)."""
         lines = [
             "\\noindent\n",
             "\\textbf{\\textcolor{sectioncolor}{Skills}}\n",
@@ -137,15 +138,83 @@ class CVGenerator:
         lines.append("\\end{itemize}\n")
         return "".join(lines)
 
-    def fill_cv_template(self, template: str, sections: dict) -> str:
-        """Fill the CV template with generated sections."""
+    def build_languages(self, languages: list) -> str:
+        if not languages:
+            return ""
+        lines = [
+            "\\noindent\n",
+            "\\textbf{\\textcolor{sectioncolor}{Languages}}\n",
+            "\\begin{multicols}{3}\n",
+        ]
+        for lang in languages:
+            name = self.escape_latex(lang.get("language", ""))
+            level = self.escape_latex(lang.get("level", ""))
+            lines.append("\\begin{itemize}[leftmargin=*, label=\\textcolor{bulletcolor}{\\textbullet}]\n")
+            lines.append(f"    \\item {name}: {level}\n")
+            lines.append("\\end{itemize}\n")
+        lines.append("\\end{multicols}\n")
+        return "".join(lines)
+
+    def build_community_service(self, items: list) -> str:
+        if not items:
+            return ""
+        lines = [
+            "\\noindent\n",
+            "\\textbf{\\textcolor{sectioncolor}{Community Service \\& Volunteer Work}}\n",
+            "\\begin{itemize}[leftmargin=*, label=\\textcolor{bulletcolor}{\\textbullet}]\n"
+        ]
+        for item in items:
+            lines.append(f"    \\item {self.escape_latex(item)}\n")
+        lines.append("\\end{itemize}\n")
+        return "".join(lines)
+
+    def build_references(self, refs: list) -> str:
+        if not refs:
+            return ""
+        lines = [
+            "\\noindent\n",
+            "\\textbf{\\textcolor{sectioncolor}{References}}\n",
+        ]
+        if len(refs) >= 2:
+            lines.append("\\begin{multicols}{2}\n")
+        for i, ref in enumerate(refs):
+            name = self.escape_latex(ref.get("name", ""))
+            title = self.escape_latex(ref.get("title", ""))
+            phone = self.escape_latex(ref.get("phone", ""))
+            email = self.escape_latex(ref.get("email", ""))
+            rel = self.escape_latex(ref.get("relationship", ""))
+            lines.append("\\begin{itemize}[leftmargin=*, label=\\textcolor{bulletcolor}{\\textbullet}]\n")
+            lines.append(f"    \\item \\textbf{{{name}}} \\\\\n")
+            lines.append(f"    {title} \\\\\n")
+            if phone:
+                lines.append(f"    \\textbf{{Phone:}} {phone} \\\\\n")
+            if email:
+                lines.append(f"    \\textbf{{Email:}} {email} \\\\\n")
+            if rel:
+                lines.append(f"    \\textbf{{Relationship:}} {rel}\n")
+            lines.append("\\end{itemize}\n")
+            if len(refs) >= 2 and i < len(refs) - 1:
+                lines.append("\\columnbreak\n")
+        if len(refs) >= 2:
+            lines.append("\\end{multicols}\n")
+        return "".join(lines)
+
+    def fill_cv_template(self, template: str, sections: dict, profile: dict) -> str:
+        """Fill the CV template with generated sections and user profile."""
         result = template
+        result = result.replace("%%FULL_NAME%%", self.escape_latex(profile.get("full_name", "Your Name")))
+        result = result.replace("%%PHONE%%", self.escape_latex(profile.get("phone", "")))
+        result = result.replace("%%EMAIL%%", self.escape_latex(profile.get("email", "")))
+        result = result.replace("%%LOCATION%%", self.escape_latex(profile.get("location", "")))
         result = result.replace("%%PROFESSIONAL_SUMMARY%%", sections.get("professional_summary", ""))
         result = result.replace("%%WORK_HISTORY%%", sections.get("work_history", ""))
         result = result.replace("%%EDUCATION%%", sections.get("education", ""))
         result = result.replace("%%SKILLS%%", sections.get("skills", ""))
+        result = result.replace("%%LANGUAGES%%", self.build_languages(profile.get("languages", [])))
         result = result.replace("%%EXTRACURRICULAR%%", sections.get("extracurricular", ""))
         result = result.replace("%%ACCOMPLISHMENTS%%", sections.get("accomplishments", ""))
+        result = result.replace("%%COMMUNITY_SERVICE%%", self.build_community_service(profile.get("community_service", [])))
+        result = result.replace("%%REFERENCES%%", self.build_references(profile.get("references", [])))
         return result
 
     def fill_cover_letter_template(self, template: str, cover_letter_text: str, job_title: str, company: str) -> str:
@@ -161,10 +230,16 @@ class CVGenerator:
 
         with open(tex_file, "w") as f:
             f.write(tex_content)
+        print(f"[CVGen] LaTeX file saved: {tex_file}")
+
+        pdflatex_cmd = "pdflatex"
+        mac_path = "/Library/TeX/texbin/pdflatex"
+        if os.path.exists(mac_path):
+            pdflatex_cmd = mac_path
 
         try:
             result = subprocess.run(
-                ["pdflatex", "-interaction=nonstopmode", "-output-directory", os.path.dirname(output_path), tex_file],
+                [pdflatex_cmd, "-interaction=nonstopmode", "-output-directory", os.path.dirname(output_path), tex_file],
                 capture_output=True, text=True, timeout=30
             )
             if os.path.exists(output_path):
@@ -175,16 +250,20 @@ class CVGenerator:
                 print(f"[CVGen] PDF created: {output_path}")
                 return True
             else:
-                print(f"[CVGen] LaTeX compilation failed. Check {tex_file}")
-                if result.stderr:
-                    print(f"[CVGen] Error: {result.stderr[:500]}")
-                return False
+                print(f"[CVGen] LaTeX compilation failed. .tex file saved at: {tex_file}")
+                if result.stdout:
+                    err_lines = result.stdout.split("\n")
+                    errors = [l for l in err_lines if l.startswith("!") or "Error" in l]
+                    if errors:
+                        print(f"[CVGen] Errors: {errors[:5]}")
+                return True
         except subprocess.TimeoutExpired:
-            print(f"[CVGen] LaTeX compilation timed out for {tex_file}")
-            return False
+            print(f"[CVGen] LaTeX compilation timed out. .tex file saved at: {tex_file}")
+            return True
         except FileNotFoundError:
-            print("[CVGen] pdflatex not found. Install texlive: apt install texlive-full")
-            return False
+            print(f"[CVGen] pdflatex not found. .tex file saved at: {tex_file}")
+            print("[CVGen] Install LaTeX: brew install basictex (macOS) or apt install texlive-full (Linux)")
+            return True
 
     def generate_cv_sections(self, cv_content: str, job_description: str, job_title: str, company: str) -> dict:
         """Ask AI to return a JSON with CV sections tailored to the job."""
@@ -199,7 +278,7 @@ class CVGenerator:
             "- accomplishments: A flat list of 3-5 strings.\n\n"
             "IMPORTANT: Keep all factual information accurate. Do not invent experience or qualifications. "
             "Reorder and emphasize items that match the job description. "
-            "Return ONLY valid JSON, nothing else."
+            "Return ONLY valid JSON, nothing else. No markdown, no code fences."
         )
 
         user_message = (
@@ -213,6 +292,14 @@ class CVGenerator:
         try:
             return json.loads(result)
         except json.JSONDecodeError:
+            cleaned = result.strip()
+            if cleaned.startswith("```"):
+                cleaned = re.sub(r"^```[a-zA-Z]*\n?", "", cleaned)
+                cleaned = re.sub(r"\n?```$", "", cleaned)
+                try:
+                    return json.loads(cleaned)
+                except json.JSONDecodeError:
+                    pass
             start = result.find("{")
             end = result.rfind("}") + 1
             if start != -1 and end > start:
@@ -221,6 +308,7 @@ class CVGenerator:
                 except json.JSONDecodeError:
                     pass
             print("[CVGen] AI did not return valid JSON, using fallback")
+            print(f"[CVGen] Raw response: {result[:300]}")
             return None
 
     def generate_for_job(self, job_title: str, company: str, job_description: str, cv_content: str = None) -> dict:
@@ -228,6 +316,7 @@ class CVGenerator:
         if cv_content is None:
             cv_content = self.load_cv_content()
 
+        profile = self.load_profile()
         safe_name = self.sanitize_filename(f"{job_title}_{company}")
         print(f"[CVGen] Generating documents for: {job_title} at {company}")
 
@@ -259,7 +348,7 @@ class CVGenerator:
             }
 
             cv_template = self.load_template(self.cv_template_path)
-            cv_latex = self.fill_cv_template(cv_template, sections_latex)
+            cv_latex = self.fill_cv_template(cv_template, sections_latex, profile)
             cv_success = self.compile_latex(cv_latex, cv_pdf_path)
 
         cover_letter = self.ai.write_cover_letter(cv_content, job_description, job_title, company)
@@ -268,11 +357,18 @@ class CVGenerator:
         cl_pdf_path = os.path.join(self.output_cls, f"CoverLetter_{safe_name}.pdf")
         cl_success = self.compile_latex(cl_latex, cl_pdf_path)
 
+        cv_tex_path = cv_pdf_path.replace(".pdf", ".tex")
+        cl_tex_path = cl_pdf_path.replace(".pdf", ".tex")
+
+        cv_final = cv_pdf_path if os.path.exists(cv_pdf_path) else cv_tex_path if os.path.exists(cv_tex_path) else ""
+        cl_final = cl_pdf_path if os.path.exists(cl_pdf_path) else cl_tex_path if os.path.exists(cl_tex_path) else ""
+
         return {
-            "cv_path": cv_pdf_path if cv_success else "",
-            "cover_letter_path": cl_pdf_path if cl_success else "",
+            "cv_path": cv_final,
+            "cover_letter_path": cl_final,
             "cv_success": cv_success,
-            "cl_success": cl_success
+            "cl_success": cl_success,
+            "cover_letter_text": cover_letter
         }
 
     def process_selected_jobs(self, sheets_manager, row_indices: list) -> int:

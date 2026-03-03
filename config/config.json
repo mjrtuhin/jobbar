@@ -4,9 +4,9 @@
     },
     "ai_provider": {
         "api_key": "",
-        "base_url": "https://api.moonshot.cn/v1",
-        "model": "moonshot-v1-8k",
-        "provider": "moonshot"
+        "base_url": "https://api.groq.com/openai/v1",
+        "model": "llama-3.3-70b-versatile",
+        "provider": "groq"
     },
     "search_defaults": {
         "location": "United Kingdom",

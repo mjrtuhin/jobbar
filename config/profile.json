@@ -1,0 +1,30 @@
+{
+    "full_name": "Julfikar Rahman Tuhin",
+    "email": "jrtuhin61@gmail.com",
+    "phone": "07438424646",
+    "location": "Aston St, Birmingham B4 7UJ",
+    "languages": [
+        {"language": "English", "level": "Advanced (C1)"},
+        {"language": "Bangla", "level": "Native"},
+        {"language": "Hindi", "level": "Speaking"}
+    ],
+    "community_service": [
+        "Volunteer, Mastul Foundation, 2018-2020"
+    ],
+    "references": [
+        {
+            "name": "Sohel Rana",
+            "title": "CEO, Bio Green International Ltd.",
+            "phone": "01711415026",
+            "email": "sohel@biogreenint.com",
+            "relationship": "Professional"
+        },
+        {
+            "name": "Mr. Rezwanul Mumtahin Husain",
+            "title": "Lecturer, North South University",
+            "phone": "+880-2-55668200 Ext-6057",
+            "email": "rezwanul.husain@northsouth.edu",
+            "relationship": "Academic"
+        }
+    ]
+}
