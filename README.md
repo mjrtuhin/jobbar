@@ -270,7 +270,7 @@ Contributions are welcome. Please open an issue first to discuss proposed change
 
 ## License
 
-This project is developed as an academic project. All rights reserved.
+This project is developed as MIT. 
 
 ---
 
