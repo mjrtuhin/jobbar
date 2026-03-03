@@ -218,10 +218,19 @@ class CVGenerator:
         return result
 
     def fill_cover_letter_template(self, template: str, cover_letter_text: str, job_title: str, company: str) -> str:
+        profile = self.load_profile()
+        sender_name = profile.get("full_name", "Your Name")
+        # Strip any existing sign-off the AI may have added
+        import re as _re
+        cleaned = _re.sub(
+            r'(?i)(sincerely|regards|best regards|yours faithfully|yours sincerely|kind regards)[,\s]*\n.*$',
+            '', cover_letter_text.strip()
+        ).strip()
         result = template
-        result = result.replace("%%COVER_LETTER_CONTENT%%", self.escape_latex(cover_letter_text))
+        result = result.replace("%%COVER_LETTER_CONTENT%%", self.escape_latex(cleaned))
         result = result.replace("%%JOB_TITLE%%", self.escape_latex(job_title))
         result = result.replace("%%COMPANY%%", self.escape_latex(company))
+        result = result.replace("%%SENDER_NAME%%", self.escape_latex(sender_name))
         return result
 
     def compile_latex(self, tex_content: str, output_path: str) -> bool:
