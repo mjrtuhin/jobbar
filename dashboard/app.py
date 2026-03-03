@@ -148,6 +148,7 @@ def run_agent_safely(agent_func, *args, **kwargs):
         return agent_func(*args, **kwargs)
     except Exception as e:
         error_str = str(e)
+        error_type = type(e).__name__
         if "401" in error_str or "authentication" in error_str.lower():
             st.error(
                 "API Authentication Failed (401). Your Moonshot API key is invalid or expired. "
@@ -157,8 +158,12 @@ def run_agent_safely(agent_func, *args, **kwargs):
             st.error("Rate limit reached. Wait a minute and try again.")
         elif "timeout" in error_str.lower():
             st.error("Request timed out. The API server may be busy. Try again.")
+        elif "No such file" in error_str or "FileNotFoundError" in error_type:
+            st.error(f"File not found: {error_str}")
         else:
-            st.error(f"Agent error: {error_str}")
+            st.error(f"Agent error ({error_type}): {error_str}")
+        import traceback
+        traceback.print_exc()
         return 0
 
 

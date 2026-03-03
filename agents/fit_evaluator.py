@@ -1,4 +1,5 @@
 import json
+import os
 
 
 class FitEvaluator:
@@ -7,9 +8,11 @@ class FitEvaluator:
     def __init__(self, ai_helper, config: dict):
         self.ai = ai_helper
         self.config = config
+        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    def load_cv_content(self, cv_path: str = "config/cv_content.txt") -> str:
+    def load_cv_content(self) -> str:
         """Load the user's raw CV content."""
+        cv_path = os.path.join(self.project_root, "config", "cv_content.txt")
         with open(cv_path, "r") as f:
             return f.read()
 

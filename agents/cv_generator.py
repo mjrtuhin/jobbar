@@ -10,12 +10,14 @@ class CVGenerator:
     def __init__(self, ai_helper, config: dict):
         self.ai = ai_helper
         self.config = config
-        self.cv_template_path = config["latex"]["cv_template"]
-        self.cl_template_path = config["latex"]["cover_letter_template"]
-        self.output_cvs = config["latex"]["output_dir_cvs"]
-        self.output_cls = config["latex"]["output_dir_cover_letters"]
+        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.cv_template_path = os.path.join(self.project_root, config["latex"]["cv_template"])
+        self.cl_template_path = os.path.join(self.project_root, config["latex"]["cover_letter_template"])
+        self.output_cvs = os.path.join(self.project_root, config["latex"]["output_dir_cvs"])
+        self.output_cls = os.path.join(self.project_root, config["latex"]["output_dir_cover_letters"])
 
-    def load_cv_content(self, cv_path: str = "config/cv_content.txt") -> str:
+    def load_cv_content(self) -> str:
+        cv_path = os.path.join(self.project_root, "config", "cv_content.txt")
         with open(cv_path, "r") as f:
             return f.read()
 
