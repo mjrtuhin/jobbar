@@ -1,5 +1,12 @@
 # Jobbar - Multi-Agent AI Job Hunting System
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![LaTeX](https://img.shields.io/badge/LaTeX-PDF%20Generation-008080?style=for-the-badge&logo=latex&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq-Llama%203.3-F55036?style=for-the-badge)
+
 Jobbar is an intelligent, multi-agent job hunting platform that automates the entire job application pipeline. It crawls multiple job boards simultaneously, stores results in a structured Excel database, and leverages AI agents to generate tailored CVs, cover letters, fit evaluations, and application emails for each position.
 
 Built with Python and powered by a Streamlit dashboard, Jobbar provides a complete end-to-end solution for job seekers who want to apply smarter, not harder.
@@ -270,7 +277,7 @@ Contributions are welcome. Please open an issue first to discuss proposed change
 
 ## License
 
-This project is developed as an academic project. All rights reserved.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
