@@ -1,0 +1,87 @@
+FULL NAME: Md Julfikar Rahman Tuhin
+EMAIL: jrtuhin61@gmail.com
+PHONE: +44 7438 424646
+LOCATION: Birmingham, United Kingdom
+LINKEDIN: https://linkedin.com/in/julfikar-tuhin
+GITHUB: https://github.com/mjrtuhin
+PERSONAL STATEMENT:
+Business Analyst who gets genuinely excited about finding patterns in data. At Plas y Brenin, I analyzed 2,352 course records and discovered they could generate £300-400K in additional annual revenue by fixing a critical 25% occupancy threshold issue. I love working on projects, whether it's wrangling messy datasets, building machine learning models, or convincing stakeholders that the data is telling a different story than they expected.
+EDUCATION:
+
+MSc Business Analytics, Aston University, Birmingham, UK | Jan 2025 - Jan 2026
+Graduated January 30, 2026. Specialized in data mining, machine learning, big data analytics, and predictive modeling. Completed capstone project analyzing £1.3M revenue loss with actionable recommendations. Honorable mention at Institute of Analytics Competition 2025.
+BBA in Marketing, North South University, Dhaka, Bangladesh | 2019 - Jun 2023
+CGPA 3.11/4.00. Focused on marketing strategy, market research, consumer behavior, and digital marketing. Built foundation in business analytics and data-driven decision-making.
+
+WORK EXPERIENCE:
+
+Data Analyst - Capstone Project, Plas y Brenin (National Mountain Sports Centre), Wales, UK | Sep 2024 - Jan 2025
+Analyzed 2,352 course records discovering £1.3M revenue loss from 59% cancellation rate. Built CatBoost ML model forecasting participant demand 3-6 months ahead (RMSE 4.27, MAPE <30%). Identified critical 25% occupancy threshold causing 39.7% of cancellations. Delivered recommendations projecting £300-400K annual revenue increase.
+Market Analyst, BioGreen International Limited, Dhaka, Bangladesh | Jan 2022 - Dec 2024
+Conducted market research identifying untapped customer segments driving 34% acquisition growth and BDT 24 crore revenue contribution. Built forecasting models and competitive intelligence systems. Created executive dashboards influencing pricing strategies and product launches.
+Marketing Intern, Redmin Industries Ltd., Dhaka, Bangladesh | Sep 2022 - Jan 2023
+Conducted multi-industry market research across textile, leather, packaging sectors. Identified import substitution opportunities in adhesives and resins. Created data visualizations and feasibility analyses guiding product portfolio decisions.
+Part-Time Cleaning Inspection, Birmingham City Council, Birmingham, UK | Current
+Maintain quality standards across council facilities through systematic inspections. Ensure health, safety, and compliance requirements while collaborating with teams on operational priorities.
+
+SKILLS:
+Programming & Data:
+
+Python (pandas, NumPy, scikit-learn, CatBoost, Prophet)
+R (tidyverse, ggplot2)
+SQL (PostgreSQL, MySQL)
+Go (Gin framework)
+JavaScript/TypeScript (React)
+
+Analytics & Visualization:
+
+Tableau, Power BI
+Data Analysis & Statistical Modeling
+Machine Learning & Forecasting
+Excel (Advanced)
+ECharts, Recharts
+
+Tools & Platforms:
+
+Git/GitHub
+Docker
+AWS
+Firebase
+Jupyter Notebooks
+
+Business Skills:
+
+Market Research
+Competitive Intelligence
+Business Intelligence
+Strategic Planning
+Stakeholder Communication
+
+CERTIFICATIONS:
+
+Data Analyst Associate, DataCamp, May 2025 (Valid until May 2027)
+Credential ID: DAA0015352952490
+Programming in C# (Basic), HackerRank, Oct 2022
+
+PROJECTS:
+
+LOOMIS ENGINE: Built free, open-source data visualization platform with 32 chart types, 6 geographic maps, and Google Sheets integration. Full-stack development using React TypeScript and Go, serving unlimited users with zero paywalls.
+ARGUS: Developing ML-powered anomaly detection for Prometheus infrastructure monitoring. Multi-algorithm detection using Prophet, Isolation Forest, and STL decomposition with zero-config deployment.
+Plas y Brenin Revenue Analysis: Analyzed 5,550+ records identifying £1.3M revenue loss. Built ML forecasting model and delivered £300-400K recovery recommendations.
+
+LANGUAGES:
+
+English: Advanced (C1)
+Bangla: Native
+Hindi: Conversational
+
+VOLUNTEER WORK:
+
+Volunteer, Mastul Foundation, Dhaka, Bangladesh | 2018-2020
+
+REFERENCES:
+
+Sohel Rana, CEO, BioGreen International Ltd.
+Phone: +880 1711 415026 | Email: sohel@biogreenint.com
+Mr. Rezwanul Mumtahin Husain, Lecturer, North South University
+Phone: +880-2-55668200 Ext-6057 | Email: rezwanul.husain@northsouth.edu

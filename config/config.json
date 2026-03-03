@@ -1,0 +1,33 @@
+{
+    "storage": {
+        "file_path": "data/jobs.xlsx"
+    },
+    "ai_provider": {
+        "api_key": "",
+        "base_url": "https://api.moonshot.cn/v1",
+        "model": "moonshot-v1-8k",
+        "provider": "moonshot"
+    },
+    "search_defaults": {
+        "location": "United Kingdom",
+        "job_type": "full-time",
+        "date_posted": "past_week",
+        "salary_min": 0,
+        "salary_max": 0
+    },
+    "crawlers": {
+        "rate_limit_seconds": 2,
+        "max_results_per_site": 500,
+        "user_agents": [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ]
+    },
+    "latex": {
+        "cv_template": "templates/cv_template.tex",
+        "cover_letter_template": "templates/cover_letter.tex",
+        "output_dir_cvs": "outputs/cvs",
+        "output_dir_cover_letters": "outputs/cover_letters"
+    }
+}
